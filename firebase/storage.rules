@@ -1,0 +1,21 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isSignedIn() { return request.auth != null; }
+    function isMember(chatId) {
+      return isSignedIn()
+        && exists(/databases/(default)/documents/chats/$(chatId))
+        && (request.auth.uid in get(/databases/(default)/documents/chats/$(chatId)).data.members);
+    }
+
+    // Only members of the chat can read/write files under uploads/{chatId}/...
+    match /uploads/{chatId}/{allPaths=**} {
+      allow read, write: if isMember(chatId);
+    }
+
+    // Deny everything else by default
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}
