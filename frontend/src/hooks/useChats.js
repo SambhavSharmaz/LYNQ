@@ -21,12 +21,10 @@ export function useChats() {
   const [messages, setMessages] = useState([])
   const [typing, setTyping] = useState({})
   
-  // Wrapper function for setActiveChat with debugging
+  // Wrapper function for setActiveChat
   const setActiveChat = (chat) => {
-    console.log('🔥 setActiveChat called with:', chat)
-    console.log('🔥 Previous activeChat:', activeChat)
+    if (activeChat?.id === chat?.id) return
     setActiveChatState(chat)
-    console.log('🔥 activeChat should be updated to:', chat?.id)
   }
 
   useEffect(() => {
@@ -38,42 +36,36 @@ export function useChats() {
     
     const unsub = onSnapshot(q, (snap) => {
       const list = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-      
+
       // Sort manually by updatedAt since we can't use orderBy without the index
       list.sort((a, b) => {
         const aTime = a.updatedAt?.seconds || 0
         const bTime = b.updatedAt?.seconds || 0
         return bTime - aTime // descending
       })
-      
-      console.log('🔥 Chats loaded:', list.length)
+
       setChats(list)
       if (!activeChat && list.length) {
-        console.log('🔥 Auto-selecting first chat:', list[0])
         setActiveChat(list[0])
       }
     }, (error) => {
-      console.error('🔥 Error loading chats:', error)
+      // Optionally handle error silently or surface via UI
     })
     
     return () => unsub()
-  }, [auth.currentUser])
+  }, [auth.currentUser?.uid])
 
   useEffect(() => {
     if (!activeChat) {
-      console.log('🔥 Messages: No active chat, clearing messages')
       setMessages([])
       return
     }
-    
-    console.log('🔥 Messages: Loading messages for chat:', activeChat.id)
+
     const q = query(collection(db, 'chats', activeChat.id, 'messages'), orderBy('createdAt', 'asc'))
     const unsub = onSnapshot(q, (snap) => {
       const newMessages = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-      console.log('🔥 Messages: Loaded', newMessages.length, 'messages for chat', activeChat.id)
       setMessages(newMessages)
     }, (error) => {
-      console.error('🔥 Messages: Error loading messages for chat', activeChat.id, error)
       setMessages([])
     })
     socket.emit('join', { chatId: activeChat.id, userId: auth.currentUser?.uid })
@@ -88,54 +80,34 @@ export function useChats() {
   }, [activeChat?.id])
 
   const ensure1to1Chat = useCallback(async (otherUserId) => {
-    console.log('🔥 ensure1to1Chat called with:', {
-      currentUserId: auth.currentUser?.uid,
-      otherUserId,
-      authCurrentUser: auth.currentUser
-    })
-    
     if (!auth.currentUser) {
       throw new Error('User not authenticated')
     }
-    
+
     const id = [auth.currentUser.uid, otherUserId].sort().join('_')
-    console.log('🔥 Chat ID generated:', id)
-    
     const refDoc = doc(db, 'chats', id)
-    console.log('🔥 Checking if chat exists...')
-    
     const snap = await getDoc(refDoc)
-    console.log('🔥 Chat exists?', snap.exists())
-    
+
     if (!snap.exists()) {
-      console.log('🔥 Creating new chat document...')
       const chatData = {
         isGroup: false,
         members: [auth.currentUser.uid, otherUserId],
         updatedAt: serverTimestamp(),
         createdAt: serverTimestamp(),
       }
-      console.log('🔥 Chat data to create:', chatData)
-      
       await setDoc(refDoc, chatData)
-      console.log('🔥 Chat document created successfully')
     }
-    
+
     const finalSnap = await getDoc(refDoc)
     const result = { id, ...finalSnap.data() }
-    console.log('🔥 Final chat result:', result)
-    
     return result
   }, [])
 
   const startDirectChat = useCallback(async (otherUserId) => {
-    console.log('Starting direct chat with user:', otherUserId)
     try {
       const chat = await ensure1to1Chat(otherUserId)
-      console.log('Direct chat created/found:', chat)
       setActiveChat({ id: chat.id, ...chat })
     } catch (error) {
-      console.error('Error starting direct chat:', error)
       throw error
     }
   }, [ensure1to1Chat])
@@ -151,7 +123,6 @@ export function useChats() {
       updatedAt: serverTimestamp(),
     })
     const newGroupChat = { id: chatRef.id, isGroup: true, name, members }
-    console.log('🔥 Setting active chat to new group:', newGroupChat)
     setActiveChat(newGroupChat)
     return chatRef.id
   }, [])

@@ -2,4 +2,65 @@
 @tailwind components;
 @tailwind utilities;
 
-html, body, #root { height: 100%; }
+/* Base theme */
+@layer base {
+  :root {
+    --brand-blue: #1D9BF0;
+    --brand-dark: #0D1117;
+    --brand-neon: #10B981;
+  }
+
+  html, body, #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-brand-dark text-white antialiased;
+    background-image:
+      radial-gradient(60% 40% at 20% 20%, rgba(29,155,240,0.12), transparent),
+      radial-gradient(50% 40% at 80% 30%, rgba(16,185,129,0.10), transparent);
+    background-attachment: fixed;
+  }
+
+  ::selection {
+    background: rgba(29,155,240,0.35);
+    color: white;
+  }
+}
+
+/* Components */
+@layer components {
+  .card {
+    @apply bg-white/5 border border-white/10 rounded-2xl shadow-xl backdrop-blur;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium transition;
+  }
+  .btn-primary {
+    @apply bg-brand-blue text-white hover:brightness-110 shadow-glow;
+  }
+  .btn-ghost {
+    @apply bg-white/10 text-white hover:bg-white/20;
+  }
+  .input {
+    @apply w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-brand-blue/50;
+  }
+}
+
+/* Scrollbar */
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background-color: rgba(255,255,255,0.12);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255,255,255,0.2);
+}

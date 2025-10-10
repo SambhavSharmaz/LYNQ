@@ -7,13 +7,6 @@ const DebugInfo = () => {
   const { user } = useAuth()
   const { users, usersMap } = useUsers()
   const { chats, activeChat } = useChats()
-  
-  console.log('🔥 Debug - Current state:', {
-    user: user?.uid,
-    chatsCount: chats.length,
-    activeChat: activeChat?.id,
-    usersCount: users.length
-  })
 
   return (
     <div className="p-4 bg-gray-100 border rounded-lg mt-4 text-xs">
