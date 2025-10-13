@@ -1,6 +1,6 @@
 [
   {
-    "origin": ["http://localhost:5173", "https://your-production-domain.com"],
+    "origin": ["http://localhost:5173", "https://lynq-96f69.web.app/"],
     "method": ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD"],
     "maxAgeSeconds": 3600,
     "responseHeader": ["Content-Type", "Authorization"]
