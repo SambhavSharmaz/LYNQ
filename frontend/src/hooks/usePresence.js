@@ -1,6 +1,6 @@
 import { useEffect, useCallback } from 'react'
 import { db, auth } from '../lib/firebase'
-import { doc, updateDoc, serverTimestamp, onDisconnect } from 'firebase/firestore'
+import { doc, updateDoc, serverTimestamp } from 'firebase/firestore'
 import { socket } from '../lib/socket'
 
 export function usePresence() {
