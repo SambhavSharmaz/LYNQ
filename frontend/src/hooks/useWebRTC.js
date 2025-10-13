@@ -53,17 +53,19 @@ export function useWebRTC() {
       }
     }
 
-    // Handle connection state changes
-    peerConnection.current.onconnectionstatechange = () => {
-      const state = peerConnection.current?.connectionState
-      console.log('Connection state:', state)
-      
-      if (state === 'connected') {
-        setCallState('connected')
-      } else if (state === 'disconnected' || state === 'failed') {
-        endCall()
-      }
+  // Handle connection state changes
+  peerConnection.current.onconnectionstatechange = () => {
+    const state = peerConnection.current?.connectionState
+    console.log('Connection state:', state)
+    
+    if (state === 'connected') {
+      setCallState('connected')
+    } else if (state === 'failed') {
+      console.error('WebRTC connection failed')
+      endCall()
     }
+    // Don't auto-end on disconnected - allow for reconnection
+  }
 
     return peerConnection.current
   }, [currentCall])
@@ -101,6 +103,13 @@ export function useWebRTC() {
   // Start a call
   const startCall = useCallback(async (targetUserId, type = 'video') => {
     try {
+      // Check if socket is connected
+      if (!socket.connected) {
+        console.error('Socket not connected. Cannot start call.')
+        alert('Unable to connect to server. Please check your internet connection and try again.')
+        return
+      }
+
       setCallType(type)
       setCallState('calling')
       setIsCallActive(true)
@@ -134,12 +143,22 @@ export function useWebRTC() {
       })
 
       socket.emit('call-request', callData)
+
+      // Set a timeout to end call if no response
+      setTimeout(() => {
+        if (callState === 'calling') {
+          console.log('Call timeout - no response')
+          endCall()
+        }
+      }, 30000) // 30 seconds timeout
+
     } catch (error) {
       console.error('Error starting call:', error)
+      alert('Failed to start call: ' + error.message)
       setCallState('idle')
       setIsCallActive(false)
     }
-  }, [user, getUserMedia, createPeerConnection])
+  }, [user, getUserMedia, createPeerConnection, callState])
 
   // Answer a call
   const answerCall = useCallback(async (callData) => {
