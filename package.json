@@ -1,0 +1,25 @@
+{
+  "name": "lynq",
+  "version": "1.0.0",
+  "description": "Tagline: \"Stay Lynq’d. Always.\"",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "react-scripts start"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SambhavSharmaz/LYNQ.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/SambhavSharmaz/LYNQ/issues"
+  },
+  "homepage": "https://github.com/SambhavSharmaz/LYNQ#readme",
+  "dependencies": {
+    "cors": "^2.8.5"
+  }
+}

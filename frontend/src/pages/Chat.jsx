@@ -3,8 +3,12 @@ import Header from '../components/Header'
 import ChatList from '../components/ChatList'
 import ChatWindow from '../components/ChatWindow'
 import { ChatsProvider } from '../context/ChatsContext'
+import { usePresence } from '../hooks/usePresence'
 
 function ChatContent() {
+  // Initialize presence system for this user
+  usePresence()
+  
   return (
     <div className="h-full flex flex-col">
       <Header />

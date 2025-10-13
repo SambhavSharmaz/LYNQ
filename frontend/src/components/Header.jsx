@@ -1,12 +1,19 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
-import { motion } from 'framer-motion'
-import { LogOut } from 'lucide-react'
+import { useFriends } from '../hooks/useFriends'
+import { motion, AnimatePresence } from 'framer-motion'
+import { LogOut, Bell } from 'lucide-react'
+import FriendRequests from './FriendRequests'
 
 export default function Header() {
   const { user, signOut } = useAuth()
+  const { friendRequests } = useFriends()
+  const [showFriendRequests, setShowFriendRequests] = useState(false)
+  
+  const totalPendingRequests = friendRequests.incoming.length
 
   return (
+    <>
     <motion.header
       initial={{ y: -50, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
@@ -16,7 +23,7 @@ export default function Header() {
       {/* Left Section: Logo + Title */}
       <div className="flex items-center gap-3">
         <motion.img
-          src="/Logo.jpg"
+          src="/Logo.png"
           alt="Lynq"
           className="w-9 h-9 rounded-lg shadow-[0_0_12px_rgba(0,255,255,0.4)]"
           whileHover={{ scale: 1.1, rotate: 3 }}
@@ -54,6 +61,20 @@ export default function Header() {
           {user?.displayName || user?.email}
         </div>
 
+        {totalPendingRequests > 0 && (
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setShowFriendRequests(true)}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-semibold bg-brand-neon/20 border border-brand-neon/30 hover:bg-brand-neon/30 transition-all relative"
+          >
+            <Bell size={16} />
+            <span className="absolute -top-1 -right-1 w-5 h-5 bg-brand-neon text-xs rounded-full flex items-center justify-center text-black font-bold">
+              {totalPendingRequests}
+            </span>
+          </motion.button>
+        )}
+
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
@@ -65,5 +86,13 @@ export default function Header() {
         </motion.button>
       </div>
     </motion.header>
+
+    {/* Friend Requests Modal */}
+    <AnimatePresence>
+      {showFriendRequests && (
+        <FriendRequests onClose={() => setShowFriendRequests(false)} />
+      )}
+    </AnimatePresence>
+    </>
   )
 }
