@@ -7,10 +7,11 @@ import SmartReplies from './SmartReplies'
 import TypingIndicator from './TypingIndicator'
 import Picker from 'emoji-picker-react'
 import { FiSmile } from 'react-icons/fi'
+import { Phone, Video } from 'lucide-react'
 import { socket } from '../lib/socket'
 import { motion, AnimatePresence } from 'framer-motion'
 
-export default function ChatWindow() {
+export default function ChatWindow({ onStartCall }) {
   const { user } = useAuth()
   const { activeChat, messages, sendMessage, indicateTyping } = useChatsContext()
   const { usersMap } = useUsers()
@@ -193,6 +194,26 @@ export default function ChatWindow() {
               : currentChatInfo?.email}
           </p>
         </div>
+        
+        {/* Call buttons - only show for 1-on-1 chats */}
+        {!currentChatInfo?.isGroup && currentChatInfo?.otherId && (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => onStartCall?.(currentChatInfo.otherId, 'voice')}
+              className="p-2 rounded-full bg-gray-700 hover:bg-gray-600 text-white transition-colors duration-200"
+              title="Voice call"
+            >
+              <Phone className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => onStartCall?.(currentChatInfo.otherId, 'video')}
+              className="p-2 rounded-full bg-blue-600 hover:bg-blue-500 text-white transition-colors duration-200"
+              title="Video call"
+            >
+              <Video className="w-5 h-5" />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Messages */}

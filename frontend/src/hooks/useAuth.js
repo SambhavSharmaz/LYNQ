@@ -7,6 +7,10 @@ import {
   createUserWithEmailAndPassword,
   signOut,
   updateProfile,
+  RecaptchaVerifier,
+  signInWithPhoneNumber,
+  PhoneAuthProvider,
+  signInWithCredential
 } from 'firebase/auth'
 import { doc, setDoc, getDoc, onSnapshot } from 'firebase/firestore'
 
@@ -14,6 +18,7 @@ export function useAuth() {
   const [user, setUser] = useState(null)
   const [userData, setUserData] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [recaptchaVerifier, setRecaptchaVerifier] = useState(null)
 
   // Generate unique lynqId
   const generateLynqId = () => {
@@ -42,8 +47,9 @@ export function useAuth() {
           const userData = {
             uid: u.uid,
             lynqId: lynqId,
-            displayName: u.displayName || u.email?.split('@')[0] || 'User',
+            displayName: u.displayName || u.email?.split('@')[0] || u.phoneNumber || 'User',
             email: u.email || null,
+            phoneNumber: u.phoneNumber || null,
             photoURL: u.photoURL || null,
             updatedAt: serverTimestamp(),
             friends: userSnap.data()?.friends || [],
@@ -87,6 +93,24 @@ export function useAuth() {
     return () => unsub()
   }, [])
 
+  // Initialize recaptcha verifier
+  const initRecaptcha = useCallback(() => {
+    if (!recaptchaVerifier) {
+      const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        size: 'invisible',
+        callback: () => {
+          console.log('reCAPTCHA solved')
+        },
+        'expired-callback': () => {
+          console.log('reCAPTCHA expired')
+        }
+      })
+      setRecaptchaVerifier(verifier)
+      return verifier
+    }
+    return recaptchaVerifier
+  }, [recaptchaVerifier])
+
   const actions = useMemo(() => ({
     googleSignIn: async () => {
       await signInWithPopup(auth, googleProvider)
@@ -98,8 +122,23 @@ export function useAuth() {
       const cred = await createUserWithEmailAndPassword(auth, email, password)
       if (displayName) await updateProfile(cred.user, { displayName })
     },
+    phoneSignIn: async (phoneNumber) => {
+      const verifier = initRecaptcha()
+      const confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, verifier)
+      return confirmationResult
+    },
+    verifyOTP: async (confirmationResult, otp) => {
+      const result = await confirmationResult.confirm(otp)
+      return result
+    },
+    linkPhoneNumber: async (phoneNumber) => {
+      if (!auth.currentUser) throw new Error('No user logged in')
+      const verifier = initRecaptcha()
+      const confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, verifier)
+      return confirmationResult
+    },
     signOut: async () => { await signOut(auth) }
-  }), [])
+  }), [initRecaptcha])
 
   // Return the merged user data that includes lynqId
   return { user: userData, loading, ...actions }

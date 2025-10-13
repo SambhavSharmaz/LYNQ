@@ -38,6 +38,7 @@ module.exports = {
         float: 'float 3s ease-in-out infinite',
         pulseGlow: 'pulseGlow 2s ease-in-out infinite',
         fadeSlideUp: 'fadeSlideUp .5s ease-out both',
+        'pulse-slow': 'pulse 3s ease-in-out infinite',
       },
     },
   },

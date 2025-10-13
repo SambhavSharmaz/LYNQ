@@ -101,6 +101,38 @@ export default function AddFriend({ onClose }) {
     window.open(url)
   }
 
+  const shareViaSMS = () => {
+    const message = `Hey! Add me on Lynq using my ID: ${user?.lynqId}. Download: https://lynq-96f69.web.app`
+    const url = `sms:?body=${encodeURIComponent(message)}`
+    window.open(url)
+  }
+
+  const sendSMSInvite = async (phoneNumber) => {
+    try {
+      setLoading(true)
+      // This would typically call your backend API to send SMS
+      const response = await fetch('/api/sms/invite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phoneNumber,
+          message: `${user?.displayName} invited you to Lynq! Use their ID: ${user?.lynqId} to connect. Download: https://lynq-96f69.web.app`,
+          senderName: user?.displayName
+        })
+      })
+      
+      if (response.ok) {
+        setSuccess('SMS invite sent successfully!')
+      } else {
+        throw new Error('Failed to send SMS')
+      }
+    } catch (err) {
+      setError('Failed to send SMS invite')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -129,11 +161,14 @@ export default function AddFriend({ onClose }) {
             <button onClick={copyLynqId} className="btn btn-ghost px-3 py-1 text-sm">Copy</button>
           </div>
           
-          <div className="flex gap-2">
-            <button onClick={shareViaWhatsApp} className="btn btn-ghost flex-1 text-sm">
+          <div className="grid grid-cols-2 gap-2">
+            <button onClick={shareViaWhatsApp} className="btn btn-ghost text-sm">
               📱 WhatsApp
             </button>
-            <button onClick={shareViaEmail} className="btn btn-ghost flex-1 text-sm">
+            <button onClick={shareViaSMS} className="btn btn-ghost text-sm">
+              💬 SMS
+            </button>
+            <button onClick={shareViaEmail} className="btn btn-ghost text-sm col-span-2">
               📧 Email
             </button>
           </div>
