@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: lynq-backend
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    rootDir: ./backend
+    plan: free
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: FRONTEND_ORIGIN
+        sync: false # Set this manually in Render dashboard
