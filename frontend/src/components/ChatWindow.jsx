@@ -122,43 +122,18 @@ export default function ChatWindow({ onStartCall }) {
     )
   }
 
-  // Cloudinary upload
-  const uploadFileToCloudinary = async (file) => {
-    if (!file) return null
-    setUploading(true)
-    const formData = new FormData()
-    formData.append('file', file)
-    formData.append('upload_preset', import.meta.env.VITE_CLOUD_UPLOAD_PRESET)
-
-    try {
-      const res = await fetch(
-        `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUD_NAME}/upload`,
-        { method: 'POST', body: formData }
-      )
-      const data = await res.json()
-      setUploading(false)
-      if (!data.secure_url) return null
-      return { url: data.secure_url, type: file.type }
-    } catch (err) {
-      console.error('Cloudinary upload error:', err)
-      setUploading(false)
-      return null
-    }
-  }
 
   const onSend = async () => {
     if (!text.trim() && !file) return
 
-    let media = null
-    if (file) {
-      media = await uploadFileToCloudinary(file)
-      if (!media) return
+    try {
+      await sendMessage(activeChat.id, text, file)
+      setText('')
       setFile(null)
       if (fileInputRef.current) fileInputRef.current.value = ''
+    } catch (error) {
+      console.error('Failed to send message:', error)
     }
-
-    await sendMessage(activeChat.id, text, media)
-    setText('')
   }
 
   const addEmoji = (emojiObj) => setText((prev) => prev + emojiObj.emoji)

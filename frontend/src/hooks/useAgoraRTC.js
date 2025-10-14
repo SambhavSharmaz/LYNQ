@@ -13,60 +13,64 @@ export function useAgoraRTC() {
   const clientRef = useRef(null)
   const localVideoRef = useRef(null)
 
-  // Start call or join channel
   const initCall = useCallback(async (channel, type = 'video') => {
-    try {
-      setCallType(type)
-      setIsCallActive(true)
+  if (!user?.uid) {
+    console.error('Cannot start Agora call: user is null')
+    return
+  }
 
-      // Create Agora client
-      clientRef.current = createClient({ mode: 'rtc', codec: 'vp8' })
-      await clientRef.current.join(
-        import.meta.env.VITE_AGORA_APP_ID, // Agora App ID
-        channel,
-        import.meta.env.VITE_AGORA_TEMP_TOKEN || null, // Token if App Cert enabled
-        user.uid
-      )
+  try {
+    setCallType(type)
+    setIsCallActive(true)
 
-      // Create local tracks
-      const [microphoneTrack, cameraTrack] = await createMicrophoneAndCameraTracks(
-        true,
-        type === 'video'
-      )
-      setLocalTracks({ audioTrack: microphoneTrack, videoTrack: cameraTrack })
+    clientRef.current = createClient({ mode: 'rtc', codec: 'vp8' })
+    await clientRef.current.join(
+      import.meta.env.VITE_AGORA_APP_ID,
+      channel,
+      import.meta.env.VITE_AGORA_TEMP_TOKEN || null,
+      user.uid
+    )
 
-      // Play local video
-      if (type === 'video' && localVideoRef.current) {
-        cameraTrack.play(localVideoRef.current)
-      }
+    const [microphoneTrack, cameraTrack] = await createMicrophoneAndCameraTracks(
+      { microphoneId: undefined },
+      type === 'video' ? { cameraId: undefined } : false
+    )
 
-      // Publish tracks
-      await clientRef.current.publish([microphoneTrack, cameraTrack])
+    setLocalTracks({ audioTrack: microphoneTrack, videoTrack: cameraTrack })
 
-      // Remote users events
-      clientRef.current.on('user-published', async (user, mediaType) => {
-        await clientRef.current.subscribe(user, mediaType)
-        setRemoteUsers(prev => ({ ...prev, [user.uid]: user }))
-        if (mediaType === 'video') {
-          const container = document.getElementById(`remote-${user.uid}`)
-          if (container) user.videoTrack.play(container)
-        }
-      })
-
-      clientRef.current.on('user-unpublished', user => {
-        setRemoteUsers(prev => {
-          const copy = { ...prev }
-          delete copy[user.uid]
-          return copy
-        })
-      })
-
-      setCurrentCall({ channel, type })
-    } catch (err) {
-      console.error('Agora call error:', err)
-      endCall()
+    if (type === 'video' && cameraTrack && localVideoRef.current) {
+      cameraTrack.play(localVideoRef.current)
     }
-  }, [user.uid])
+
+    // Publish tracks (only publish what exists)
+    const tracksToPublish = [microphoneTrack]
+    if (cameraTrack) tracksToPublish.push(cameraTrack)
+    await clientRef.current.publish(tracksToPublish)
+
+    clientRef.current.on('user-published', async (user, mediaType) => {
+      await clientRef.current.subscribe(user, mediaType)
+      setRemoteUsers(prev => ({ ...prev, [user.uid]: user }))
+      if (mediaType === 'video') {
+        const container = document.getElementById(`remote-${user.uid}`)
+        if (container) user.videoTrack.play(container)
+      }
+    })
+
+    clientRef.current.on('user-unpublished', user => {
+      setRemoteUsers(prev => {
+        const copy = { ...prev }
+        delete copy[user.uid]
+        return copy
+      })
+    })
+
+    setCurrentCall({ channel, type })
+  } catch (err) {
+    console.error('Agora call error:', err)
+    endCall()
+  }
+}, [user?.uid])
+
 
   const endCall = useCallback(async () => {
     if (localTracks.audioTrack) {
@@ -89,23 +93,39 @@ export function useAgoraRTC() {
     setIsCallActive(false)
     setCurrentCall(null)
     setCallType('video')
-  }, [localTracks])
+  }, [localTracks.audioTrack, localTracks.videoTrack])
 
   const toggleAudio = useCallback(() => {
     if (localTracks.audioTrack) {
       localTracks.audioTrack.setEnabled(!localTracks.audioTrack.enabled)
     }
-  }, [localTracks])
+  }, [localTracks.audioTrack])
 
   const toggleVideo = useCallback(() => {
     if (localTracks.videoTrack) {
       localTracks.videoTrack.setEnabled(!localTracks.videoTrack.enabled)
     }
-  }, [localTracks])
+  }, [localTracks.videoTrack])
 
   useEffect(() => {
-    return () => endCall()
-  }, [endCall])
+    return () => {
+      // Cleanup function without dependencies
+      if (localTracks.audioTrack) {
+        localTracks.audioTrack.stop()
+        localTracks.audioTrack.close()
+      }
+      if (localTracks.videoTrack) {
+        localTracks.videoTrack.stop()
+        localTracks.videoTrack.close()
+      }
+      if (clientRef.current) {
+        clientRef.current.leave()
+        clientRef.current.removeAllListeners()
+        clientRef.current = null
+      }
+    }
+  }, [])
+
 
   return {
     localVideoRef,

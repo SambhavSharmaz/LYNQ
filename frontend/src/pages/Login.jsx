@@ -19,7 +19,7 @@ export default function Login() {
         className="w-full max-w-md bg-white/5 backdrop-blur-md rounded-2xl p-10 shadow-xl space-y-6"
       >
         <div className="flex flex-col items-center gap-3">
-          <img src="/Logo.jpg" alt="Lynq" className="w-12 h-12 rounded-md shadow-glow animate-float" />
+          <img src="/Logo.png" alt="Lynq" className="w-12 h-12 rounded-md shadow-glow animate-float" />
           <h1 className="text-4xl font-display font-bold bg-gradient-to-r from-brand-blue to-brand-neon bg-clip-text text-transparent">
             Lynq
           </h1>
@@ -30,7 +30,7 @@ export default function Login() {
           onClick={googleSignIn} 
           className="flex items-center justify-center gap-3 w-full py-3 rounded-xl border border-white/20 hover:border-white/40 bg-white/10 backdrop-blur transition-colors text-white font-medium"
         >
-          <img src="/google-icon.svg" alt="Google" className="w-5 h-5"/>
+          <span className="text-lg">G</span>
           Continue with Google
         </button>
 
