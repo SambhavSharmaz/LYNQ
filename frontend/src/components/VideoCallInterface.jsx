@@ -30,17 +30,26 @@ export default function VideoCallInterface({
           </div>
         )}
         {Object.values(remoteUsers).map(user => (
-          <div 
+          <video 
             key={user.uid} 
             id={`remote-${user.uid}`} 
-            className="w-full h-full bg-black" 
+            className="w-full h-full bg-black object-cover" 
+            autoPlay
+            playsInline
+            muted={false}
           />
         ))}
 
         {/* Local video */}
         {callType === 'video' && (
           <div className="absolute top-4 right-4 w-32 h-24 bg-black rounded-lg overflow-hidden shadow-lg">
-            <div ref={localVideoRef} className="w-full h-full" />
+            <video 
+              ref={localVideoRef} 
+              className="w-full h-full object-cover" 
+              autoPlay
+              playsInline
+              muted={true}
+            />
             {!isVideoEnabled && (
               <div className="absolute inset-0 bg-gray-800 flex items-center justify-center">
                 <VideoOff className="w-6 h-6 text-white" />

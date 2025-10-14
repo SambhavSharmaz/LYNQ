@@ -62,7 +62,10 @@ export function useAgoraRTC() {
       return false
     }
 
-    if (!import.meta.env.VITE_AGORA_APP_ID) {
+    const agoraAppId = import.meta.env.VITE_AGORA_APP_ID
+    console.log('🔍 Debug - Agora App ID:', agoraAppId ? `${agoraAppId.substring(0, 8)}...` : 'NOT FOUND')
+    
+    if (!agoraAppId) {
       console.error('Agora App ID not found in environment variables')
       setError('Video calling is not configured. Please check environment variables.')
       return false
@@ -90,7 +93,7 @@ export function useAgoraRTC() {
       
       // Join a channel
       await clientRef.current.join(
-        import.meta.env.VITE_AGORA_APP_ID,
+        agoraAppId,
         channel,
         import.meta.env.VITE_AGORA_TEMP_TOKEN || null,
         user.uid

@@ -11,7 +11,7 @@ export function useCallSignaling() {
   const callTimeoutRef = useRef(null)
   const CALL_TIMEOUT = 30000 // 30 seconds
 
-  // Generate a valid Agora channel name (max 64 bytes, alphanumeric + limited special chars)
+  // Generate a valid channel name (max 64 bytes, alphanumeric + limited special chars)
   const generateChannelName = useCallback((callerId, recipientId) => {
     // Create a hash-like string from user IDs to ensure uniqueness but keep it short
     const combined = `${callerId}${recipientId}`.replace(/[^a-zA-Z0-9]/g, '').substring(0, 20)

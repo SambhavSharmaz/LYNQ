@@ -4,9 +4,11 @@ import ChatList from '../components/ChatList'
 import ChatWindow from '../components/ChatWindow'
 import CallNotification from '../components/CallNotification'
 import VideoCallInterface from '../components/VideoCallInterface'
+import EnvDebug from '../components/EnvDebug'
+import ZegoTest from '../components/ZegoTest'
 import { ChatsProvider } from '../context/ChatsContext'
 import { usePresence } from '../hooks/usePresence'
-import { useAgoraRTC } from '../hooks/useAgoraRTC'
+import { useZegoCloud } from '../hooks/useZegoCloud'
 import { useCallSignaling } from '../hooks/useCallSignaling'
 import { useUsers } from '../hooks/useUsers'
 
@@ -25,20 +27,20 @@ function ChatContent() {
     endCall: endCallSignaling
   } = useCallSignaling()
 
-  // Agora RTC hook
+  // Zegocloud RTC hook
   const {
     localVideoRef,
     remoteUsers,
     isCallActive,
     callType,
     currentCall,
-    error: agoraError,
+    error: zegoError,
     isLoading,
     initCall,
-    endCall: endAgoraCall,
+    endCall: endZegoCall,
     toggleAudio,
     toggleVideo
-  } = useAgoraRTC()
+  } = useZegoCloud()
 
   // Handle start call - initiate call signaling first
   const handleStartCall = async (targetUserId, type) => {
@@ -47,10 +49,10 @@ function ChatContent() {
     try {
       const callData = await initiateCall(targetUserId, type)
       if (callData) {
-        // Start Agora call immediately for caller
+        // Start Zegocloud call immediately for caller
         const success = await initCall(callData.channel, type)
         if (!success) {
-          // If Agora fails, end the signaling
+          // If Zegocloud fails, end the signaling
           endCallSignaling()
         }
       }
@@ -65,10 +67,10 @@ function ChatContent() {
     
     try {
       acceptCall(callData)
-      // Join the Agora channel
+      // Join the Zegocloud channel
       const success = await initCall(callData.channel, callData.type)
       if (!success) {
-        // If Agora fails, reject the call
+        // If Zegocloud fails, reject the call
         rejectCall(callData)
       }
     } catch (error) {
@@ -82,10 +84,10 @@ function ChatContent() {
     rejectCall(callData)
   }
 
-  // Handle end call - end both signaling and Agora
+  // Handle end call - end both signaling and Zegocloud
   const handleEndCall = () => {
     endCallSignaling()
-    endAgoraCall()
+    endZegoCall()
   }
 
   // Get user info
@@ -96,6 +98,8 @@ function ChatContent() {
 
   return (
     <div className="h-full flex flex-col relative">
+      <EnvDebug />
+      <ZegoTest />
       <Header />
       <div className="flex-1 grid grid-cols-4 gap-0">
         <div className="col-span-1 border-r overflow-y-auto">
@@ -136,9 +140,9 @@ function ChatContent() {
         </div>
       )}
       
-      {agoraError && (
+      {zegoError && (
         <div className="fixed bottom-4 right-4 bg-red-500 text-white p-4 rounded-lg z-50">
-          <p>{agoraError}</p>
+          <p>{zegoError}</p>
           <button onClick={() => handleEndCall()} className="mt-2 bg-red-600 px-3 py-1 rounded">
             Close
           </button>
