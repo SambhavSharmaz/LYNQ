@@ -11,12 +11,10 @@ import { useUsers } from '../hooks/useUsers'
 import { socket } from '../lib/socket'
 
 function ChatContent() {
-  // Initialize presence system for this user
   usePresence()
   const { usersMap } = useUsers()
   const [incomingCall, setIncomingCall] = useState(null)
-  
-  // WebRTC functionality
+
   const {
     localVideoRef,
     remoteVideoRef,
@@ -37,6 +35,7 @@ function ChatContent() {
   // Listen for incoming calls
   useEffect(() => {
     const handleIncomingCall = (callData) => {
+      console.log('Incoming call:', callData)
       setIncomingCall(callData)
     }
 
@@ -47,26 +46,29 @@ function ChatContent() {
     }
   }, [])
 
-  // Handle starting a call from chat window
+  // Start a call
   const handleStartCall = (targetUserId, type) => {
+    if (!targetUserId) return
+    console.log('Starting call to', targetUserId, 'type', type)
     startCall(targetUserId, type)
   }
 
-  // Handle answering incoming call
+  // Answer call
   const handleAnswerCall = (callData) => {
     setIncomingCall(null)
     answerCall(callData)
   }
 
-  // Handle rejecting incoming call
+  // Reject call
   const handleRejectCall = (callData) => {
     setIncomingCall(null)
     rejectCall(callData)
   }
 
-  // Get caller info for notifications
+  // Get caller info safely
   const getCallerInfo = (callData) => {
-    const caller = usersMap[callData?.from]
+    if (!callData?.from) return { name: 'Unknown', avatar: null }
+    const caller = usersMap[callData.from]
     return {
       name: caller?.displayName || caller?.email || 'Unknown User',
       avatar: caller?.photoURL || null
@@ -75,7 +77,7 @@ function ChatContent() {
 
   const callerInfo = incomingCall ? getCallerInfo(incomingCall) : null
   const currentCallerInfo = currentCall ? getCallerInfo({ from: currentCall.otherUserId }) : null
-  
+
   return (
     <div className="h-full flex flex-col relative">
       <Header />
@@ -84,11 +86,11 @@ function ChatContent() {
           <ChatList />
         </div>
         <div className="col-span-3 overflow-hidden">
-          <ChatWindow onStartCall={handleStartCall} />
+          <ChatWindow onStartCall={handleStartCall} usersMap={usersMap} />
         </div>
       </div>
 
-      {/* Call Notification */}
+      {/* Incoming call notification */}
       <CallNotification
         show={!!incomingCall}
         callData={incomingCall}
@@ -98,7 +100,7 @@ function ChatContent() {
         onReject={handleRejectCall}
       />
 
-      {/* Video Call Interface */}
+      {/* Active call interface */}
       <VideoCallInterface
         show={isCallActive}
         localVideoRef={localVideoRef}

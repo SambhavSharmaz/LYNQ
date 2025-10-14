@@ -18,7 +18,6 @@ export default function Login() {
         transition={{ duration: 0.5, ease: 'easeOut' }}
         className="w-full max-w-md bg-white/5 backdrop-blur-md rounded-2xl p-10 shadow-xl space-y-6"
       >
-        {/* Logo */}
         <div className="flex flex-col items-center gap-3">
           <img src="/Logo.jpg" alt="Lynq" className="w-12 h-12 rounded-md shadow-glow animate-float" />
           <h1 className="text-4xl font-display font-bold bg-gradient-to-r from-brand-blue to-brand-neon bg-clip-text text-transparent">
@@ -133,11 +132,11 @@ export default function Login() {
           )}
         </AnimatePresence>
 
-        {/* Footer */}
         <p className="text-center text-xs text-white/50 mt-2">
           By signing in, you agree to our Terms & Privacy Policy.
         </p>
       </motion.div>
+      <div id="recaptcha-container"></div>
     </div>
   )
 }

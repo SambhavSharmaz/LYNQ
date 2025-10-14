@@ -17,7 +17,6 @@ export function useFriends() {
   const [friendRequests, setFriendRequests] = useState({ incoming: [], outgoing: [] })
   const [loading, setLoading] = useState(true)
 
-  // Listen to current user's friend data
   useEffect(() => {
     if (!auth.currentUser) {
       setLoading(false)

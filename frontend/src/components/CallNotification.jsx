@@ -9,22 +9,24 @@ export default function CallNotification({
   onReject, 
   show 
 }) {
-  const [ringtoneAudio] = useState(new Audio('/sounds/ringtone.mp3'))
+  const [ringtoneAudio] = useState(() => new Audio('/ringtone.mp3'))
 
   useEffect(() => {
-    if (show && callData) {
+    if (show && callData && ringtoneAudio) {
       // Play ringtone
       ringtoneAudio.loop = true
       ringtoneAudio.play().catch(console.error)
-    } else {
+    } else if (ringtoneAudio) {
       // Stop ringtone
       ringtoneAudio.pause()
       ringtoneAudio.currentTime = 0
     }
 
     return () => {
-      ringtoneAudio.pause()
-      ringtoneAudio.currentTime = 0
+      if (ringtoneAudio) {
+        ringtoneAudio.pause()
+        ringtoneAudio.currentTime = 0
+      }
     }
   }, [show, callData, ringtoneAudio])
 
@@ -38,7 +40,7 @@ export default function CallNotification({
         <div className="text-center mb-8">
           <div className="w-24 h-24 mx-auto mb-4 relative">
             <img
-              src={callerAvatar || '/images/default-avatar.png'}
+              src={callerAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(callerName || 'User')}&background=6366f1&color=fff&size=96`}
               alt={callerName}
               className="w-full h-full rounded-full object-cover border-4 border-green-500"
             />

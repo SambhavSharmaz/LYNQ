@@ -78,8 +78,8 @@ export default function ChatWindow({ onStartCall }) {
         setTypingUsers(prev => {
           const existing = prev.find(u => u.userId === data.userId)
           if (existing) {
-            return prev.map(u => 
-              u.userId === data.userId 
+            return prev.map(u =>
+              u.userId === data.userId
                 ? { ...u, isTyping: true, userName: data.userName }
                 : u
             )
@@ -91,9 +91,9 @@ export default function ChatWindow({ onStartCall }) {
 
     const handleTypingStop = (data) => {
       if (data.chatId === activeChat.id) {
-        setTypingUsers(prev => 
-          prev.map(u => 
-            u.userId === data.userId 
+        setTypingUsers(prev =>
+          prev.map(u =>
+            u.userId === data.userId
               ? { ...u, isTyping: false }
               : u
           ).filter(u => u.isTyping)
@@ -173,16 +173,14 @@ export default function ChatWindow({ onStartCall }) {
             {!currentChatInfo?.isGroup && (
               <div className="flex items-center gap-1">
                 <div
-                  className={`w-3 h-3 rounded-full shadow-lg ${
-                    currentChatInfo?.isOnline 
-                      ? 'bg-brand-neon animate-pulse shadow-brand-neon/50' 
+                  className={`w-3 h-3 rounded-full shadow-lg ${currentChatInfo?.isOnline
+                      ? 'bg-brand-neon animate-pulse shadow-brand-neon/50'
                       : 'bg-red-500 shadow-red-500/50'
-                  }`}
+                    }`}
                   title={currentChatInfo?.isOnline ? 'Online' : 'Offline'}
                 />
-                <span className={`text-xs font-medium ${
-                  currentChatInfo?.isOnline ? 'text-brand-neon' : 'text-red-400'
-                }`}>
+                <span className={`text-xs font-medium ${currentChatInfo?.isOnline ? 'text-brand-neon' : 'text-red-400'
+                  }`}>
                   {currentChatInfo?.isOnline ? 'Online' : 'Offline'}
                 </span>
               </div>
@@ -194,9 +192,9 @@ export default function ChatWindow({ onStartCall }) {
               : currentChatInfo?.email}
           </p>
         </div>
-        
+
         {/* Call buttons - only show for 1-on-1 chats */}
-        {!currentChatInfo?.isGroup && currentChatInfo?.otherId && (
+        {!currentChatInfo?.isGroup && currentChatInfo?.otherId ? (
           <div className="flex items-center gap-2">
             <button
               onClick={() => onStartCall?.(currentChatInfo.otherId, 'voice')}
@@ -213,7 +211,7 @@ export default function ChatWindow({ onStartCall }) {
               <Video className="w-5 h-5" />
             </button>
           </div>
-        )}
+        ) : null}
       </div>
 
       {/* Messages */}
@@ -231,11 +229,10 @@ export default function ChatWindow({ onStartCall }) {
             return (
               <div key={m.id} className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
                 <div
-                  className={`max-w-[70%] px-4 py-2 rounded-2xl shadow-sm backdrop-blur ${
-                    isOwnMessage
+                  className={`max-w-[70%] px-4 py-2 rounded-2xl shadow-sm backdrop-blur ${isOwnMessage
                       ? 'bg-gradient-to-r from-[#1D9BF0] to-blue-600 text-white rounded-br-md'
                       : 'bg-[#161B22] text-gray-100 border border-gray-700 rounded-bl-md'
-                  }`}
+                    }`}
                 >
                   {!isOwnMessage && activeChat?.isGroup && (
                     <div className="text-xs text-[#1D9BF0]/70 mb-1 font-medium">
@@ -280,15 +277,15 @@ export default function ChatWindow({ onStartCall }) {
             )
           })
         )}
-        
+
         {/* Typing Indicator */}
         <AnimatePresence>
-          <TypingIndicator 
-            typingUsers={typingUsers} 
+          <TypingIndicator
+            typingUsers={typingUsers}
             currentUserId={user?.uid}
           />
         </AnimatePresence>
-        
+
         <div ref={messagesEndRef} />
       </div>
 
@@ -324,11 +321,11 @@ export default function ChatWindow({ onStartCall }) {
               value={text}
               onChange={(e) => {
                 setText(e.target.value)
-                
+
                 // Handle typing indicators
                 if (e.target.value.length > 0) {
                   startTyping(activeChat.id)
-                  
+
                   // Clear existing timeout and set new one
                   if (typingTimeout) clearTimeout(typingTimeout)
                   const newTimeout = setTimeout(() => {
@@ -377,11 +374,10 @@ export default function ChatWindow({ onStartCall }) {
           <button
             onClick={onSend}
             disabled={!text.trim() && !file}
-            className={`px-6 py-3 rounded-2xl font-medium transition-all duration-200 ${
-              text.trim() || file
+            className={`px-6 py-3 rounded-2xl font-medium transition-all duration-200 ${text.trim() || file
                 ? 'bg-[#1D9BF0] hover:bg-blue-500 text-white shadow-[0_0_10px_#1D9BF0]'
                 : 'bg-gray-700 text-gray-400 cursor-not-allowed'
-            }`}
+              }`}
           >
             {uploading ? 'Uploading...' : 'Send'}
           </button>

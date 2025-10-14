@@ -1,18 +1,41 @@
 import { useEffect, useState, useMemo, useCallback } from 'react'
-import { auth, googleProvider, db, serverTimestamp } from '../lib/firebase'
 import {
+  getAuth,
   onAuthStateChanged,
   signInWithPopup,
+  GoogleAuthProvider,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut,
   updateProfile,
   RecaptchaVerifier,
   signInWithPhoneNumber,
-  PhoneAuthProvider,
-  signInWithCredential
 } from 'firebase/auth'
-import { doc, setDoc, getDoc, onSnapshot } from 'firebase/firestore'
+import {
+  getFirestore,
+  doc,
+  setDoc,
+  getDoc,
+  onSnapshot,
+  serverTimestamp,
+} from 'firebase/firestore'
+import { initializeApp } from 'firebase/app'
+
+// Initialize Firebase (ensure .env values are set)
+const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
+}
+
+const app = initializeApp(firebaseConfig)
+const auth = getAuth(app)
+const db = getFirestore(app)
+const googleProvider = new GoogleAuthProvider()
 
 export function useAuth() {
   const [user, setUser] = useState(null)
@@ -20,90 +43,75 @@ export function useAuth() {
   const [loading, setLoading] = useState(true)
   const [recaptchaVerifier, setRecaptchaVerifier] = useState(null)
 
-  // Generate unique lynqId
+  // ✅ Generate unique Lynq ID
   const generateLynqId = () => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
-    let result = ''
-    for (let i = 0; i < 8; i++) {
-      result += chars.charAt(Math.floor(Math.random() * chars.length))
-    }
-    return result
+    return Array.from({ length: 8 }, () =>
+      chars.charAt(Math.floor(Math.random() * chars.length))
+    ).join('')
   }
 
+  // ✅ Listen for auth changes
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (u) => {
+    const unsubscribe = onAuthStateChanged(auth, async (u) => {
       setUser(u)
+      if (!u) {
+        setUserData(null)
+        setLoading(false)
+        return
+      }
+
       try {
-        if (u) {
-          const userDoc = doc(db, 'users', u.uid)
-          const userSnap = await getDoc(userDoc)
-          
-          // Check if user already has a lynqId
-          let lynqId = userSnap.data()?.lynqId
-          if (!lynqId) {
-            lynqId = generateLynqId()
+        const userRef = doc(db, 'users', u.uid)
+        const snap = await getDoc(userRef)
+        let lynqId = snap.exists() ? snap.data()?.lynqId : null
+
+        if (!lynqId) lynqId = generateLynqId()
+
+        const profileData = {
+          uid: u.uid,
+          lynqId,
+          displayName: u.displayName || u.email?.split('@')[0] || u.phoneNumber || 'User',
+          email: u.email || null,
+          phoneNumber: u.phoneNumber || null,
+          photoURL: u.photoURL || null,
+          updatedAt: serverTimestamp(),
+          friends: snap.data()?.friends || [],
+          friendRequests: {
+            incoming: snap.data()?.friendRequests?.incoming || [],
+            outgoing: snap.data()?.friendRequests?.outgoing || []
           }
-          
-          const userData = {
-            uid: u.uid,
-            lynqId: lynqId,
-            displayName: u.displayName || u.email?.split('@')[0] || u.phoneNumber || 'User',
-            email: u.email || null,
-            phoneNumber: u.phoneNumber || null,
-            photoURL: u.photoURL || null,
-            updatedAt: serverTimestamp(),
-            friends: userSnap.data()?.friends || [],
-            friendRequests: {
-              incoming: userSnap.data()?.friendRequests?.incoming || [],
-              outgoing: userSnap.data()?.friendRequests?.outgoing || []
-            }
-          }
-          
-          await setDoc(userDoc, userData, { merge: true })
-          
-          // Listen to real-time updates for this user's data
-          const unsubUser = onSnapshot(userDoc, (doc) => {
-            if (doc.exists()) {
-              const firestoreData = doc.data()
-              setUserData({
-                ...u,
-                ...firestoreData
-              })
-            } else {
-              setUserData({
-                ...u,
-                ...userData,
-                lynqId: lynqId
-              })
-            }
-          })
-          
-          // Store the unsubscribe function for cleanup
-          return () => unsubUser()
-        } else {
-          setUserData(null)
         }
-      } catch (e) {
-        console.warn('Failed to persist user profile', e)
+
+        await setDoc(userRef, profileData, { merge: true })
+
+        const unsubscribeUser = onSnapshot(userRef, (docSnap) => {
+          if (docSnap.exists()) {
+            setUserData({ ...u, ...docSnap.data() })
+          } else {
+            setUserData({ ...u, ...profileData })
+          }
+        })
+
+        return () => unsubscribeUser()
+      } catch (err) {
+        console.error('Error setting up user profile:', err)
         setUserData(u)
       } finally {
         setLoading(false)
       }
     })
-    return () => unsub()
+
+    return () => unsubscribe()
   }, [])
 
-  // Initialize recaptcha verifier
+  // ✅ Initialize reCAPTCHA correctly
   const initRecaptcha = useCallback(() => {
     if (!recaptchaVerifier) {
       const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
         size: 'invisible',
-        callback: () => {
-          console.log('reCAPTCHA solved')
-        },
-        'expired-callback': () => {
-          console.log('reCAPTCHA expired')
-        }
+        callback: () => console.log('reCAPTCHA solved'),
+        'expired-callback': () => console.log('reCAPTCHA expired'),
       })
       setRecaptchaVerifier(verifier)
       return verifier
@@ -111,35 +119,43 @@ export function useAuth() {
     return recaptchaVerifier
   }, [recaptchaVerifier])
 
+  // ✅ Authentication actions
   const actions = useMemo(() => ({
     googleSignIn: async () => {
       await signInWithPopup(auth, googleProvider)
     },
+
     emailSignIn: async (email, password) => {
       await signInWithEmailAndPassword(auth, email, password)
     },
+
     emailSignUp: async (email, password, displayName) => {
       const cred = await createUserWithEmailAndPassword(auth, email, password)
       if (displayName) await updateProfile(cred.user, { displayName })
     },
+
     phoneSignIn: async (phoneNumber) => {
       const verifier = initRecaptcha()
-      const confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, verifier)
-      return confirmationResult
+      const confirmation = await signInWithPhoneNumber(auth, phoneNumber, verifier)
+      return confirmation
     },
+
     verifyOTP: async (confirmationResult, otp) => {
       const result = await confirmationResult.confirm(otp)
       return result
     },
+
     linkPhoneNumber: async (phoneNumber) => {
       if (!auth.currentUser) throw new Error('No user logged in')
       const verifier = initRecaptcha()
-      const confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, verifier)
-      return confirmationResult
+      const confirmation = await signInWithPhoneNumber(auth, phoneNumber, verifier)
+      return confirmation
     },
-    signOut: async () => { await signOut(auth) }
+
+    signOut: async () => {
+      await signOut(auth)
+    }
   }), [initRecaptcha])
 
-  // Return the merged user data that includes lynqId
   return { user: userData, loading, ...actions }
 }
