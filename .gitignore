@@ -10,3 +10,6 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-store/
+.env.production
+.env.development
+.firebase

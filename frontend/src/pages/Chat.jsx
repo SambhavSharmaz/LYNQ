@@ -11,6 +11,7 @@ import { useUsers } from '../hooks/useUsers'
 import { socket } from '../lib/socket'
 
 function ChatContent() {
+  // Initialize presence for this user
   usePresence()
   const { usersMap } = useUsers()
   const [incomingCall, setIncomingCall] = useState(null)
@@ -36,15 +37,17 @@ function ChatContent() {
   useEffect(() => {
     const handleIncomingCall = (callData) => {
       console.log('Incoming call:', callData)
-      setIncomingCall(callData)
+      // Only show if we are not already in another call
+      if (!isCallActive) setIncomingCall(callData)
+      else {
+        // Optionally auto-reject if already in call
+        socket.emit('call-busy', { callId: callData.id, to: callData.from })
+      }
     }
 
     socket.on('call-request', handleIncomingCall)
-
-    return () => {
-      socket.off('call-request', handleIncomingCall)
-    }
-  }, [])
+    return () => socket.off('call-request', handleIncomingCall)
+  }, [isCallActive])
 
   // Start a call
   const handleStartCall = (targetUserId, type) => {
@@ -53,13 +56,13 @@ function ChatContent() {
     startCall(targetUserId, type)
   }
 
-  // Answer call
+  // Answer an incoming call
   const handleAnswerCall = (callData) => {
     setIncomingCall(null)
     answerCall(callData)
   }
 
-  // Reject call
+  // Reject an incoming call
   const handleRejectCall = (callData) => {
     setIncomingCall(null)
     rejectCall(callData)
@@ -82,9 +85,12 @@ function ChatContent() {
     <div className="h-full flex flex-col relative">
       <Header />
       <div className="flex-1 grid grid-cols-4 gap-0">
+        {/* Chat list */}
         <div className="col-span-1 border-r overflow-y-auto">
           <ChatList />
         </div>
+
+        {/* Chat window */}
         <div className="col-span-3 overflow-hidden">
           <ChatWindow onStartCall={handleStartCall} usersMap={usersMap} />
         </div>
