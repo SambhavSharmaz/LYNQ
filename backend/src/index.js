@@ -76,6 +76,8 @@ io.on('connection', (socket) => {
   // Handle user presence
   socket.on('user-online', (data) => {
     socket.userId = data.userId;
+    // Join user to their personal room for receiving calls
+    socket.join(data.userId);
     socket.broadcast.emit('user-status-change', { 
       userId: data.userId, 
       isOnline: true 
@@ -118,6 +120,50 @@ io.on('connection', (socket) => {
     io.to(chatId).emit('message', payload);
   });
 
+  // ===== VIDEO CALL SIGNALING EVENTS =====
+  
+  // Handle call initiation
+  socket.on('initiate-call', (callData) => {
+    console.log(`Call initiated from ${callData.callerId} to ${callData.recipientId}`);
+    // Send call invitation to recipient
+    socket.to(callData.recipientId).emit('incoming-call', callData);
+  });
+
+  // Handle call acceptance
+  socket.on('accept-call', (callData) => {
+    console.log(`Call accepted by ${callData.recipientId} from ${callData.callerId}`);
+    // Notify caller that call was accepted
+    socket.to(callData.callerId).emit('call-accepted', callData);
+  });
+
+  // Handle call rejection
+  socket.on('reject-call', (callData) => {
+    console.log(`Call rejected by ${callData.recipientId} from ${callData.callerId}`);
+    // Notify caller that call was rejected
+    socket.to(callData.callerId).emit('call-rejected', callData);
+  });
+
+  // Handle call end
+  socket.on('end-call', (callData) => {
+    console.log(`Call ended: ${callData.callId}`);
+    // Notify both parties that call has ended
+    socket.to(callData.callerId).emit('call-ended', callData);
+    socket.to(callData.recipientId).emit('call-ended', callData);
+  });
+
+  // Handle call busy (when user is already in another call)
+  socket.on('call-busy', (callData) => {
+    console.log(`User ${callData.recipientId} is busy`);
+    socket.to(callData.callerId).emit('call-busy', callData);
+  });
+
+  // Handle call timeout (no answer after 30 seconds)
+  socket.on('call-timeout', (callData) => {
+    console.log(`Call timeout: ${callData.callId}`);
+    socket.to(callData.callerId).emit('call-timeout', callData);
+    socket.to(callData.recipientId).emit('call-timeout', callData);
+  });
+
   socket.on('disconnecting', () => {
     const userId = socket.data.userId || socket.userId;
     
@@ -134,6 +180,9 @@ io.on('connection', (socket) => {
         userId, 
         isOnline: false 
       });
+      
+      // End any ongoing calls when user disconnects
+      socket.broadcast.emit('user-offline', userId);
     }
   });
   

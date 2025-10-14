@@ -23,15 +23,24 @@ export default function VideoCallInterface({
   return (
     <div className="fixed inset-0 bg-black z-50 flex flex-col">
       {/* Remote video(s) */}
-      <div className="flex-1 relative">
+      <div className="flex-1 relative bg-gray-900">
+        {Object.values(remoteUsers).length === 0 && (
+          <div className="absolute inset-0 flex items-center justify-center text-white text-xl">
+            Waiting for others to join...
+          </div>
+        )}
         {Object.values(remoteUsers).map(user => (
-          <div key={user.uid} id={`remote-${user.uid}`} className="w-full h-full" />
+          <div 
+            key={user.uid} 
+            id={`remote-${user.uid}`} 
+            className="w-full h-full bg-black" 
+          />
         ))}
 
         {/* Local video */}
         {callType === 'video' && (
           <div className="absolute top-4 right-4 w-32 h-24 bg-black rounded-lg overflow-hidden shadow-lg">
-            <video ref={localVideoRef} autoPlay muted className="w-full h-full object-cover" />
+            <div ref={localVideoRef} className="w-full h-full" />
             {!isVideoEnabled && (
               <div className="absolute inset-0 bg-gray-800 flex items-center justify-center">
                 <VideoOff className="w-6 h-6 text-white" />
