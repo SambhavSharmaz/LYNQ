@@ -6,7 +6,7 @@ import { socket } from '../lib/socket'
 export function usePresence() {
   // Set user online when component mounts
   useEffect(() => {
-    if (!auth.currentUser) return
+    if (!auth.currentUser?.uid) return
 
     const setOnlineStatus = async (isOnline) => {
       try {
@@ -68,7 +68,7 @@ export function usePresence() {
 
   // Typing indicator functions
   const startTyping = useCallback((chatId) => {
-    if (!auth.currentUser) return
+    if (!auth.currentUser?.uid) return
     socket.emit('typing-start', {
       chatId,
       userId: auth.currentUser.uid,
@@ -77,7 +77,7 @@ export function usePresence() {
   }, [])
 
   const stopTyping = useCallback((chatId) => {
-    if (!auth.currentUser) return
+    if (!auth.currentUser?.uid) return
     socket.emit('typing-stop', {
       chatId,
       userId: auth.currentUser.uid

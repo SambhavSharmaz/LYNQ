@@ -18,7 +18,7 @@ export function useFriends() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!auth.currentUser) {
+    if (!auth.currentUser?.uid) {
       setLoading(false)
       return
     }
@@ -70,7 +70,7 @@ export function useFriends() {
 
   // Send friend request
   const sendFriendRequest = useCallback(async (targetUserId) => {
-    if (!auth.currentUser || targetUserId === auth.currentUser.uid) return
+    if (!auth.currentUser?.uid || targetUserId === auth.currentUser.uid) return
 
     const currentUserDoc = doc(db, 'users', auth.currentUser.uid)
     const targetUserDoc = doc(db, 'users', targetUserId)
@@ -88,7 +88,7 @@ export function useFriends() {
 
   // Accept friend request
   const acceptFriendRequest = useCallback(async (requesterId) => {
-    if (!auth.currentUser) return
+    if (!auth.currentUser?.uid) return
 
     const currentUserDoc = doc(db, 'users', auth.currentUser.uid)
     const requesterDoc = doc(db, 'users', requesterId)
@@ -108,7 +108,7 @@ export function useFriends() {
 
   // Reject friend request
   const rejectFriendRequest = useCallback(async (requesterId) => {
-    if (!auth.currentUser) return
+    if (!auth.currentUser?.uid) return
 
     const currentUserDoc = doc(db, 'users', auth.currentUser.uid)
     const requesterDoc = doc(db, 'users', requesterId)
@@ -126,7 +126,7 @@ export function useFriends() {
 
   // Cancel outgoing friend request
   const cancelFriendRequest = useCallback(async (targetUserId) => {
-    if (!auth.currentUser) return
+    if (!auth.currentUser?.uid) return
 
     const currentUserDoc = doc(db, 'users', auth.currentUser.uid)
     const targetUserDoc = doc(db, 'users', targetUserId)
@@ -144,7 +144,7 @@ export function useFriends() {
 
   // Remove friend
   const removeFriend = useCallback(async (friendId) => {
-    if (!auth.currentUser) return
+    if (!auth.currentUser?.uid) return
 
     const currentUserDoc = doc(db, 'users', auth.currentUser.uid)
     const friendDoc = doc(db, 'users', friendId)

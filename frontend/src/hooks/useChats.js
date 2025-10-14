@@ -26,7 +26,7 @@ export function useChats() {
   }
 
   useEffect(() => {
-    if (!auth.currentUser) return
+    if (!auth.currentUser?.uid) return
 
     const q = query(
       collection(db, 'chats'),
@@ -75,7 +75,9 @@ export function useChats() {
       }
     )
 
-    socket.emit('join', { chatId: activeChat.id, userId: auth.currentUser?.uid })
+    if (auth.currentUser?.uid) {
+      socket.emit('join', { chatId: activeChat.id, userId: auth.currentUser.uid })
+    }
     const onTyping = (p) => setTyping((t) => ({ ...t, [p.userId]: p.typing }))
     const onMessage = (m) => {}
 
@@ -89,7 +91,7 @@ export function useChats() {
   }, [activeChat?.id])
 
   const ensure1to1Chat = useCallback(async (otherUserId) => {
-    if (!auth.currentUser) throw new Error('User not authenticated')
+    if (!auth.currentUser?.uid) throw new Error('User not authenticated')
     const id = [auth.currentUser.uid, otherUserId].sort().join('_')
     const refDoc = doc(db, 'chats', id)
     const snap = await getDoc(refDoc)
@@ -109,6 +111,7 @@ export function useChats() {
   const startDirectChat = useCallback(
     async (otherUserId) => {
       // Check if users are friends first
+      if (!auth.currentUser?.uid) throw new Error('User not authenticated')
       const currentUserDoc = await getDoc(doc(db, 'users', auth.currentUser.uid))
       const currentUserData = currentUserDoc.data()
       const friends = currentUserData?.friends || []
@@ -125,6 +128,7 @@ export function useChats() {
 
   const createGroup = useCallback(async (name, memberIds = []) => {
     // Check if all members are friends with the current user
+    if (!auth.currentUser?.uid) throw new Error('User not authenticated')
     const currentUserDoc = await getDoc(doc(db, 'users', auth.currentUser.uid))
     const currentUserData = currentUserDoc.data()
     const friends = currentUserData?.friends || []
@@ -169,6 +173,8 @@ export function useChats() {
 
   const sendMessage = useCallback(
   async (chatId, text, file) => {
+    if (!auth.currentUser?.uid) throw new Error('User not authenticated')
+    
     let mediaUrl = null
     let mediaType = null
     if (file) {
@@ -197,7 +203,9 @@ export function useChats() {
 )
 
   const indicateTyping = useCallback((chatId, typing) => {
-    socket.emit('typing', { chatId, userId: auth.currentUser?.uid, typing })
+    if (auth.currentUser?.uid) {
+      socket.emit('typing', { chatId, userId: auth.currentUser.uid, typing })
+    }
   }, [])
 
   return {
