@@ -11,12 +11,25 @@ export function useCallSignaling() {
   const callTimeoutRef = useRef(null)
   const CALL_TIMEOUT = 30000 // 30 seconds
 
+  // Generate a valid Agora channel name (max 64 bytes, alphanumeric + limited special chars)
+  const generateChannelName = useCallback((callerId, recipientId) => {
+    // Create a hash-like string from user IDs to ensure uniqueness but keep it short
+    const combined = `${callerId}${recipientId}`.replace(/[^a-zA-Z0-9]/g, '').substring(0, 20)
+    const timestamp = Date.now().toString().slice(-8) // Last 8 digits
+    const random = Math.random().toString(36).substring(2, 6) // 4 random chars
+    
+    // Format: call_<hash>_<timestamp>_<random> (max ~35 chars, well under 64 byte limit)
+    const channelName = `call_${combined}_${timestamp}_${random}`
+    console.log('Generated channel name:', channelName, 'Length:', channelName.length)
+    return channelName
+  }, [])
+
   // Initialize socket events
   useEffect(() => {
     if (!user?.uid) return
 
     // Join user to their personal room for receiving calls
-    socket.emit('user-online', user.uid)
+    socket.emit('user-online', { userId: user.uid })
 
     // Handle incoming call
     socket.on('incoming-call', (callData) => {
@@ -89,7 +102,7 @@ export function useCallSignaling() {
       callerAvatar: user.photoURL || null,
       recipientId,
       type: callType,
-      channel: `channel_${user.uid}_${recipientId}_${Date.now()}`,
+      channel: generateChannelName(user.uid, recipientId),
       timestamp: Date.now()
     }
 
