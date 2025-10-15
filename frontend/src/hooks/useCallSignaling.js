@@ -11,17 +11,17 @@ export function useCallSignaling() {
   const callTimeoutRef = useRef(null)
   const CALL_TIMEOUT = 30000 // 30 seconds
 
-  // Generate a valid channel name (max 64 bytes, alphanumeric + limited special chars)
-  const generateChannelName = useCallback((callerId, recipientId) => {
-    // Create a hash-like string from user IDs to ensure uniqueness but keep it short
+  // Generate a valid Zego room ID (alphanumeric, max 255 bytes)
+  const generateRoomID = useCallback((callerId, recipientId) => {
+    // Create a unique room ID for Zego
     const combined = `${callerId}${recipientId}`.replace(/[^a-zA-Z0-9]/g, '').substring(0, 20)
     const timestamp = Date.now().toString().slice(-8) // Last 8 digits
     const random = Math.random().toString(36).substring(2, 6) // 4 random chars
     
-    // Format: call_<hash>_<timestamp>_<random> (max ~35 chars, well under 64 byte limit)
-    const channelName = `call_${combined}_${timestamp}_${random}`
-    console.log('Generated channel name:', channelName, 'Length:', channelName.length)
-    return channelName
+    // Format: room_<hash>_<timestamp>_<random> (safe for Zego)
+    const roomID = `room_${combined}_${timestamp}_${random}`
+    console.log('Generated Zego room ID:', roomID, 'Length:', roomID.length)
+    return roomID
   }, [])
 
   // Initialize socket events
@@ -102,7 +102,7 @@ export function useCallSignaling() {
       callerAvatar: user.photoURL || null,
       recipientId,
       type: callType,
-      channel: generateChannelName(user.uid, recipientId),
+      roomID: generateRoomID(user.uid, recipientId),
       timestamp: Date.now()
     }
 
