@@ -21,13 +21,11 @@ export default function ZegoVideoCallInterface({
         </div>
       )}
 
-      {/* Loading state - only show if not yet active */}
-      {isLoading && !isCallActive && (
-        <div className="absolute inset-0 bg-black bg-opacity-75 flex items-center justify-center z-60">
-          <div className="flex flex-col items-center text-white">
-            <Loader2 className="w-8 h-8 animate-spin mb-2" />
-            <p>Connecting to call...</p>
-          </div>
+      {/* Non-blocking loading indicator */}
+      {isLoading && (
+        <div className="absolute top-16 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-60 text-white px-4 py-2 rounded-lg z-60 flex items-center">
+          <Loader2 className="w-4 h-4 animate-spin mr-2" />
+          <p className="text-sm">Connecting...</p>
         </div>
       )}
 
@@ -41,10 +39,13 @@ export default function ZegoVideoCallInterface({
           position: 'relative'
         }}
       >
-        {/* Show waiting message only when there's an error or not active yet */}
-        {!isCallActive && !isLoading && error && (
-          <div className="absolute inset-0 flex items-center justify-center text-white text-xl">
-            Failed to connect
+        {/* Show error message if there's an error */}
+        {error && (
+          <div className="absolute inset-0 flex items-center justify-center text-white text-xl bg-gray-800 bg-opacity-75">
+            <div className="text-center">
+              <p>Failed to connect</p>
+              <p className="text-sm mt-2 opacity-75">{error}</p>
+            </div>
           </div>
         )}
       </div>

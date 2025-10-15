@@ -67,16 +67,24 @@ export function useZegoVideoCall() {
     }
 
     try {
-      setIsLoading(true)
       setError(null)
       setCallType(type)
       
       // Set call as active immediately to prevent UI blocking
       setIsCallActive(true)
       setCurrentCall({ roomID, type })
+      
+      // Only show loading if script needs to be loaded
+      const needsScriptLoading = !window.ZegoUIKitPrebuilt
+      if (needsScriptLoading) {
+        setIsLoading(true)
+      }
 
       // Load Zego UIKit if not already loaded
       const ZegoUIKitPrebuilt = await loadZegoScript()
+      
+      // Script loaded - stop loading indicator to make UI interactive
+      setIsLoading(false)
 
       // Generate user ID and name
       const userID = user.uid || Math.floor(Math.random() * 10000).toString()
@@ -122,7 +130,6 @@ export function useZegoVideoCall() {
         // Callbacks
         onJoinRoom: () => {
           console.log('Successfully joined Zego room:', roomID)
-          setIsLoading(false) // Stop loading when successfully joined
         },
         onLeaveRoom: () => {
           console.log('Left Zego room')
@@ -137,8 +144,6 @@ export function useZegoVideoCall() {
         },
         onUserJoin: (users) => {
           console.log('Users joined:', users)
-          // Call is fully active when other users join
-          setIsLoading(false)
         },
         onUserLeave: (users) => {
           console.log('Users left:', users)
@@ -152,13 +157,6 @@ export function useZegoVideoCall() {
 
       // Join the room
       await zp.joinRoom(callConfig)
-      
-      // Set a timeout to stop loading if join takes too long
-      setTimeout(() => {
-        if (zegoRef.current) {
-          setIsLoading(false)
-        }
-      }, 5000) // 5 second timeout
       
       return true
 
