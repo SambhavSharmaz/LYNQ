@@ -60,114 +60,75 @@ export function useZegoVideoCall() {
   }
 
   const initCall = useCallback(async (roomID, type = 'video') => {
-    if (!user?.uid) {
-      console.error('Cannot start Zego call: user is null')
-      setError('User not authenticated')
-      return false
+  if (!user?.uid) {
+    setError('User not authenticated')
+    return false
+  }
+
+  try {
+    setError(null)
+    setIsLoading(true) // Always show loading first
+
+    // Load script first
+    const ZegoUIKitPrebuilt = await loadZegoScript()
+
+    setCallType(type)
+    setIsCallActive(true)
+    setCurrentCall({ roomID, type })
+
+    // Generate IDs
+    const userID = user.uid || Math.floor(Math.random() * 10000).toString()
+    const userName = user.displayName || user.email || `User${userID}`
+
+    const kitToken = ZegoUIKitPrebuilt.generateKitTokenForTest(
+      ZEGO_CONFIG.appID,
+      ZEGO_CONFIG.serverSecret,
+      roomID,
+      userID,
+      userName
+    )
+
+    const zp = ZegoUIKitPrebuilt.create(kitToken)
+    zegoRef.current = zp
+
+    const callConfig = {
+      container: callContainerRef.current,
+      scenario: {
+        mode: ZegoUIKitPrebuilt.OneONoneCall
+      },
+      turnOnMicrophoneWhenJoining: true,
+      turnOnCameraWhenJoining: type === 'video',
+      showMyCameraToggleButton: type === 'video',
+      showScreenSharingButton: type === 'video',
+      onJoinRoom: () => {
+        console.log('Joined Zego room:', roomID)
+        setIsLoading(false) // ✅ hide loader only once joined
+      },
+      onLeaveRoom: () => {
+        setIsCallActive(false)
+        setCurrentCall(null)
+        setIsLoading(false)
+        setError(null)
+        zegoRef.current = null
+      },
+      onError: (err) => {
+        console.error('Zego error:', err)
+        setError(`Call error: ${err.message}`)
+        setIsLoading(false)
+      }
     }
 
-    try {
-      setError(null)
-      setCallType(type)
-      
-      // Set call as active immediately to prevent UI blocking
-      setIsCallActive(true)
-      setCurrentCall({ roomID, type })
-      
-      // Only show loading if script needs to be loaded
-      const needsScriptLoading = !window.ZegoUIKitPrebuilt
-      if (needsScriptLoading) {
-        setIsLoading(true)
-      }
+    await zp.joinRoom(callConfig)
+    return true
+  } catch (err) {
+    console.error('Zego call init error:', err)
+    setError(err.message)
+    setIsLoading(false)
+    endCall()
+    return false
+  }
+}, [user])
 
-      // Load Zego UIKit if not already loaded
-      const ZegoUIKitPrebuilt = await loadZegoScript()
-      
-      // Script loaded - stop loading indicator to make UI interactive
-      setIsLoading(false)
-
-      // Generate user ID and name
-      const userID = user.uid || Math.floor(Math.random() * 10000).toString()
-      const userName = user.displayName || user.email || `User${userID}`
-
-      // Generate Kit Token using the working configuration
-      const kitToken = ZegoUIKitPrebuilt.generateKitTokenForTest(
-        ZEGO_CONFIG.appID,
-        ZEGO_CONFIG.serverSecret,
-        roomID,
-        userID,
-        userName
-      )
-
-      // Create Zego instance
-      const zp = ZegoUIKitPrebuilt.create(kitToken)
-      zegoRef.current = zp
-
-      // Configure call settings based on type - use OneONoneCall for better 1:1 experience
-      const callConfig = {
-        container: callContainerRef.current,
-        sharedLinks: [{
-          name: 'Call link',
-          url: `${window.location.origin}/call?roomID=${roomID}`,
-        }],
-        scenario: {
-          mode: ZegoUIKitPrebuilt.OneONoneCall, // Always use 1-on-1 for better UX
-        },
-        turnOnMicrophoneWhenJoining: true,
-        turnOnCameraWhenJoining: type === 'video',
-        showMyCameraToggleButton: type === 'video',
-        showMyMicrophoneToggleButton: true,
-        showAudioVideoSettingsButton: true,
-        showScreenSharingButton: type === 'video',
-        showTextChat: false, // Disable to reduce UI clutter
-        showUserList: false, // Not needed for 1:1 calls
-        maxUsers: 2,
-        layout: "Auto",
-        showLayoutButton: false,
-        showPinButton: false,
-        showRemoveButton: false,
-        
-        // Callbacks
-        onJoinRoom: () => {
-          console.log('Successfully joined Zego room:', roomID)
-        },
-        onLeaveRoom: () => {
-          console.log('Left Zego room')
-          // Reset all states when leaving
-          setTimeout(() => {
-            setIsCallActive(false)
-            setCurrentCall(null)
-            setIsLoading(false)
-            setError(null)
-            zegoRef.current = null
-          }, 100) // Small delay to ensure proper cleanup
-        },
-        onUserJoin: (users) => {
-          console.log('Users joined:', users)
-        },
-        onUserLeave: (users) => {
-          console.log('Users left:', users)
-        },
-        onError: (error) => {
-          console.error('Zego room error:', error)
-          setError(`Call error: ${error.message || 'Unknown error'}`)
-          setIsLoading(false)
-        }
-      }
-
-      // Join the room
-      await zp.joinRoom(callConfig)
-      
-      return true
-
-    } catch (err) {
-      console.error('Zego call error:', err)
-      setError(`Failed to start call: ${err.message}`)
-      setIsLoading(false)
-      endCall()
-      return false
-    }
-  }, [user])
 
   const endCall = useCallback(async () => {
     try {
