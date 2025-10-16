@@ -15,7 +15,7 @@ const allowedOrigins = [
   'http://localhost:3000',           // React dev server
   'http://localhost:5173',           // Vite dev server  
   'http://localhost:4173',           // Vite preview
-  'https://lynq-96f69.web.app',     // Firebase Hosting (production)
+  'https://lynq-7888.web.app',     // Firebase Hosting (production)
   'https://your-custom-domain.com', // Custom domain if you have one
   process.env.FRONTEND_ORIGIN       // Additional origin from environment
 ].filter(Boolean); // Remove undefined values

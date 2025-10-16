@@ -20,6 +20,7 @@
   },
   "homepage": "https://github.com/SambhavSharmaz/LYNQ#readme",
   "dependencies": {
-    "cors": "^2.8.5"
+    "cors": "^2.8.5",
+    "firebase": "^12.4.0"
   }
 }
